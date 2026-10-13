@@ -6,8 +6,10 @@ transaction_time остаётся строкой — в DateTime её перев
 """
 import argparse
 import csv
+import gzip
 import json
 import logging
+import lzma
 import os
 import sys
 import time
@@ -36,6 +38,15 @@ def convert(row: dict) -> dict:
         else:
             out[key] = value
     return out
+
+
+def open_csv(path: str):
+    """CSV можно передать как есть или сжатым (.xz / .gz)."""
+    if path.endswith(".xz"):
+        return lzma.open(path, "rt", newline="", encoding="utf-8")
+    if path.endswith(".gz"):
+        return gzip.open(path, "rt", newline="", encoding="utf-8")
+    return open(path, newline="", encoding="utf-8")
 
 
 def wait_for_kafka(bootstrap: str, timeout: int = 120) -> AdminClient:
@@ -68,7 +79,7 @@ def ensure_topic(admin: AdminClient, topic: str, partitions: int) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="CSV -> Kafka")
-    parser.add_argument("--csv", default=os.getenv("CSV_PATH", "data/train.csv"))
+    parser.add_argument("--csv", default=os.getenv("CSV_PATH", "data/train.csv.xz"))
     parser.add_argument("--bootstrap", default=os.getenv("KAFKA_BOOTSTRAP", "localhost:9094"))
     parser.add_argument("--topic", default=os.getenv("KAFKA_TOPIC", "transactions"))
     parser.add_argument("--partitions", type=int, default=int(os.getenv("KAFKA_PARTITIONS", "3")))
@@ -95,7 +106,7 @@ def main() -> int:
 
     sent = 0
     started = time.time()
-    with open(args.csv, newline="", encoding="utf-8") as f:
+    with open_csv(args.csv) as f:
         for row in csv.DictReader(f):
             payload = json.dumps(convert(row), ensure_ascii=False).encode("utf-8")
             while True:
@@ -105,7 +116,7 @@ def main() -> int:
                 except BufferError:
                     producer.poll(0.5)  # локальная очередь заполнена — ждём отправки
             sent += 1
-            if sent % 10000 == 0:
+            if sent % 100000 == 0:
                 producer.poll(0)
                 log.info("Отправлено %d сообщений", sent)
 

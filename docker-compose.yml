@@ -79,7 +79,7 @@ services:
     environment:
       KAFKA_BOOTSTRAP: kafka:9092
       KAFKA_TOPIC: transactions
-      CSV_PATH: /app/data/train.csv
+      CSV_PATH: /app/data/train.csv.xz
     volumes:
       - ./data:/app/data:ro
     restart: "no"

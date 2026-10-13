@@ -5,3 +5,6 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+
+# исходные файлы с Kaggle (в репозитории лежит data/train.csv.xz)
+teta-ml-1-2025/
