@@ -1,5 +1,8 @@
 # ДЗ №2: Kafka → ClickHouse
 
+ДЗ4 по dbt находится в каталоге [`dbt/`](dbt/README.md): staging, шесть витрин,
+data/unit tests и инструкция запуска на том же датасете.
+
 Транзакции из CSV загружаются в топик Kafka, ClickHouse забирает их через
 Kafka engine + materialized view в таблицы MergeTree. Есть SQL-запрос
 «категория наибольшей транзакции по каждому штату» и сравнение базовой

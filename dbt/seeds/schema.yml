@@ -1,0 +1,12 @@
+version: 2
+
+seeds:
+  - name: states
+    description: 50 штатов США и округ Колумбия, справочник допустимых кодов.
+    columns:
+      - name: state_code
+        description: Двухбуквенный код штата или DC.
+        data_tests: [not_null, unique]
+      - name: state_name
+        description: Полное название.
+        data_tests: [not_null]

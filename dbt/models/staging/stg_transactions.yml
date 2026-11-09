@@ -1,0 +1,78 @@
+version: 2
+
+models:
+  - name: stg_transactions
+    description: >-
+      Очищенные транзакции без точных дублей выбранных полей.
+      Отбрасываются пропуски времени/суммы, отрицательные и бесконечные суммы,
+      метки вне 0/1. Строки нормализованы, добавлены ключи и временные признаки.
+    data_tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          arguments:
+            min_value: 1
+    columns:
+      - name: transaction_id
+        description: MD5 нормализованных полей операции; одинаковые операции объединяются.
+        data_tests: [not_null, unique]
+      - name: customer_id
+        description: Условный ID клиента по имени, фамилии, полу и координатам; card_id в данных нет.
+        data_tests: [not_null]
+      - name: transaction_time
+        description: Время операции в исходном часовом поясе датасета.
+        data_tests: [not_null]
+      - name: transaction_date
+        description: Календарная дата операции.
+        data_tests: [not_null]
+      - name: day_of_week
+        description: День недели по ISO, понедельник 1, воскресенье 7; через dbt_date.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7]
+                quote: false
+      - name: transaction_hour
+        description: Час операции от 0 до 23.
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 23
+      - name: merchant
+        description: Мерчант без пробелов по краям.
+        data_tests: [not_null]
+      - name: category
+        description: Категория покупки в нижнем регистре.
+        data_tests: [not_null]
+      - name: state_code
+        description: Код штата в верхнем регистре; UNKNOWN при пропуске.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('states')
+                field: state_code
+              config:
+                where: "state_code != 'UNKNOWN'"
+      - name: gender
+        description: Пол клиента в верхнем регистре; UNKNOWN при пропуске.
+      - name: amount
+        description: Неотрицательная конечная сумма, округлённая до центов.
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+      - name: amount_bucket
+        description: SMALL < 100; MEDIUM от 100 до large_amount; LARGE от large_amount, по умолчанию 1000.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [SMALL, MEDIUM, LARGE]
+      - name: is_fraud
+        description: Истинная метка мошенничества из target.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false

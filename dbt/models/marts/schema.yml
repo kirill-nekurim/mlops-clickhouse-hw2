@@ -1,0 +1,136 @@
+version: 2
+
+models:
+  - name: mart_daily_state_metrics
+    description: "Дневные объёмы и чеки по штатам, доля крупных операций."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [transaction_date, state_code]
+    columns:
+      - name: transaction_date
+        description: "Дата операций."
+        data_tests: [not_null]
+      - name: state_code
+        description: "Код штата клиента."
+        data_tests: [not_null]
+      - name: transaction_count
+        description: "Количество операций в группе после очистки."
+      - name: total_amount
+        description: "Сумма всех операций в группе."
+      - name: average_amount
+        description: "Средний чек в группе."
+      - name: p95_amount
+        description: "Точный 95-й перцентиль суммы."
+      - name: large_transaction_share
+        description: "Процент операций с amount_bucket=LARGE."
+  - name: mart_fraud_by_category
+    description: "Частота и объём фрода по категориям покупок."
+    columns:
+      - name: category
+        description: "Категория покупки."
+        data_tests: [not_null, unique]
+      - name: transaction_count
+        description: "Количество операций в группе после очистки."
+      - name: fraud_count
+        description: "Количество операций с истинной меткой фрода."
+      - name: fraud_rate
+        description: "Доля фродов в процентах от 0 до 100."
+      - name: total_amount
+        description: "Сумма всех операций в группе."
+      - name: fraud_amount
+        description: "Сумма операций с меткой фрода."
+  - name: mart_fraud_by_state
+    description: "География фрода по штату клиента."
+    columns:
+      - name: state_code
+        description: "Код штата клиента."
+        data_tests: [not_null, unique]
+      - name: transaction_count
+        description: "Количество операций в группе после очистки."
+      - name: fraud_count
+        description: "Количество операций с истинной меткой фрода."
+      - name: fraud_rate
+        description: "Доля фродов в процентах от 0 до 100."
+      - name: customer_count
+        description: "Число уникальных условных ID клиентов."
+      - name: merchant_count
+        description: "Число уникальных мерчантов."
+      - name: total_amount
+        description: "Сумма всех операций в группе."
+      - name: fraud_amount
+        description: "Сумма операций с меткой фрода."
+  - name: mart_customer_risk_profile
+    description: "История и условный риск клиента. HIGH при fraud_rate >= 5%, MEDIUM при ненулевом фроде ниже 5%, иначе LOW. Это описание истории, не прогноз."
+    columns:
+      - name: customer_id
+        description: "Условный ID по имени, фамилии, полу и координатам."
+        data_tests: [not_null, unique]
+      - name: first_transaction_at
+        description: "Первая операция клиента в выборке."
+      - name: last_transaction_at
+        description: "Последняя операция клиента в выборке."
+      - name: transaction_count
+        description: "Количество операций в группе после очистки."
+      - name: fraud_count
+        description: "Количество операций с истинной меткой фрода."
+      - name: fraud_rate
+        description: "Доля фродов в процентах от 0 до 100."
+      - name: total_amount
+        description: "Сумма всех операций в группе."
+      - name: average_amount
+        description: "Средний чек в группе."
+      - name: risk_level
+        description: "Исторический сегмент HIGH / MEDIUM / LOW."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [HIGH, MEDIUM, LOW]
+  - name: mart_hourly_fraud_pattern
+    description: "Фрод по часу и дню недели, объединённый по всей истории."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [day_of_week, transaction_hour]
+    columns:
+      - name: day_of_week
+        description: "ISO день недели, понедельник 1."
+        data_tests: [not_null]
+      - name: transaction_hour
+        description: "Час от 0 до 23."
+        data_tests: [not_null]
+      - name: transaction_count
+        description: "Количество операций в группе после очистки."
+      - name: fraud_count
+        description: "Количество операций с истинной меткой фрода."
+      - name: fraud_rate
+        description: "Доля фродов в процентах от 0 до 100."
+      - name: total_amount
+        description: "Сумма всех операций в группе."
+      - name: fraud_amount
+        description: "Сумма операций с меткой фрода."
+  - name: mart_merchant_analytics
+    description: "Оборот и фрод у мерчантов; подозрительный при fraud_rate >= 5% и минимум двух фродах."
+    columns:
+      - name: merchant
+        description: "Название мерчанта."
+        data_tests: [not_null, unique]
+      - name: transaction_count
+        description: "Количество операций в группе после очистки."
+      - name: total_amount
+        description: "Сумма всех операций в группе."
+      - name: average_amount
+        description: "Средний чек в группе."
+      - name: fraud_count
+        description: "Количество операций с истинной меткой фрода."
+      - name: fraud_rate
+        description: "Доля фродов в процентах от 0 до 100."
+      - name: customer_count
+        description: "Число уникальных условных ID клиентов."
+      - name: is_suspicious
+        description: "Флаг 0/1 по исторической частоте фрода; минимум 2 фрода уменьшает шум."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false

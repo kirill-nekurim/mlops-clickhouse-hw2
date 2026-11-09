@@ -1,0 +1,11 @@
+repos:
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 3.5.0
+    hooks:
+      - id: sqlfluff-lint
+        files: ^dbt/(models|tests)/.*\.sql$
+        additional_dependencies:
+          - sqlfluff-templater-dbt==3.5.0
+          - dbt-core==1.10.15
+          - dbt-clickhouse==1.10.3
+        entry: bash -c 'cd dbt && sqlfluff lint "${@#dbt/}"' --

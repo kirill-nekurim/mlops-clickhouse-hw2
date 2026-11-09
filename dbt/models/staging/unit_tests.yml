@@ -1,0 +1,21 @@
+version: 2
+
+unit_tests:
+  - name: staging_cleans_rows_and_checks_bucket_boundaries
+    description: Удаление дублей и плохих строк, нормализация и границы сумм 100/1000.
+    model: stg_transactions
+    given:
+      - input: source('raw', 'transactions')
+        rows:
+          - {transaction_time: '2024-01-01 03:15:00', merch: ' shop ', cat_id: ' FOOD ', us_state: ' ca ', amount: 99.99, target: 0}
+          - {transaction_time: '2024-01-01 03:15:00', merch: ' shop ', cat_id: ' FOOD ', us_state: ' ca ', amount: 99.99, target: 0}
+          - {transaction_time: '2024-01-02 12:00:00', merch: 'shop', cat_id: 'food', us_state: 'CA', amount: 100, target: 1}
+          - {transaction_time: '2024-01-07 23:00:00', merch: 'shop', cat_id: 'food', us_state: 'CA', amount: 1000, target: 0}
+          - {transaction_time: '2024-01-01 00:00:00', amount: -1, target: 0}
+          - {transaction_time: '2024-01-01 00:00:00', amount: 10, target: 2}
+          - {transaction_time: null, amount: 10, target: 0}
+    expect:
+      rows:
+        - {merchant: shop, category: food, state_code: CA, amount: 99.99, amount_bucket: SMALL, day_of_week: 1, transaction_hour: 3}
+        - {merchant: shop, category: food, state_code: CA, amount: 100, amount_bucket: MEDIUM, day_of_week: 2, transaction_hour: 12}
+        - {merchant: shop, category: food, state_code: CA, amount: 1000, amount_bucket: LARGE, day_of_week: 7, transaction_hour: 23}

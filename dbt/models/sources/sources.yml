@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: "{{ env_var('CLICKHOUSE_RAW_SCHEMA', 'transactions_db') }}"
+    description: Размеченные транзакции из предыдущих домашних заданий.
+    tables:
+      - name: transactions
+        description: Исходные транзакции, до очистки и приведения типов.
+        columns:
+          - name: transaction_time
+            description: Время операции из исходного датасета, без пересчёта часового пояса.
+            data_tests: [not_null]
+          - name: amount
+            description: Сумма операции.
+            data_tests: [not_null]
+          - name: target
+            description: Истинная метка фрода, а не предсказание модели.
+            data_tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: [0, 1]
+                    quote: false
+          - name: merch
+            description: Название мерчанта.
+          - name: cat_id
+            description: Категория покупки.
+          - name: us_state
+            description: Двухбуквенный код штата клиента.
