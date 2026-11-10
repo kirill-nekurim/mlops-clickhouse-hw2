@@ -1,0 +1,33 @@
+name: fraud_analytics
+version: '1.0.0'
+config-version: 2
+profile: fraud_analytics
+require-dbt-version: [">=1.10.5", "<1.11.0"]
+
+model-paths: [models]
+macro-paths: [macros]
+test-paths: [tests]
+seed-paths: [seeds]
+clean-targets: [target, dbt_packages]
+
+models:
+  fraud_analytics:
+    staging:
+      +materialized: table
+      +engine: MergeTree()
+      +order_by: tuple()
+    marts:
+      +materialized: table
+      +engine: MergeTree()
+      +order_by: tuple()
+
+vars:
+  large_amount: 1000
+  'dbt_date:time_zone': UTC
+
+dispatch:
+  - macro_namespace: dbt_date
+    search_order: [fraud_analytics, dbt_date]
+
+flags:
+  send_anonymous_usage_stats: false

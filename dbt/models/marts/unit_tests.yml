@@ -1,0 +1,86 @@
+version: 2
+
+unit_tests:
+  - name: daily_metrics_check_p95_and_large_share
+    description: Проверяем точный P95, средний чек и долю крупных операций.
+    model: mart_daily_state_metrics
+    given:
+      - input: ref('stg_transactions')
+        rows:
+          - {transaction_date: '2024-01-01', state_code: CA, amount: 50, amount_bucket: SMALL}
+          - {transaction_date: '2024-01-01', state_code: CA, amount: 1500, amount_bucket: LARGE}
+    expect:
+      rows:
+        - {transaction_date: '2024-01-01', state_code: CA, transaction_count: 2, total_amount: 1550, average_amount: 775, p95_amount: 1500, large_transaction_share: 50}
+
+  - name: category_metrics_use_percent_and_fraud_amount
+    description: Два платежа, один фрод — 50 процентов; деньги считаются отдельно.
+    model: mart_fraud_by_category
+    given:
+      - input: ref('stg_transactions')
+        rows:
+          - {category: food, amount: 100, is_fraud: 0}
+          - {category: food, amount: 300, is_fraud: 1}
+          - {category: travel, amount: 50, is_fraud: 0}
+    expect:
+      rows:
+        - {category: food, transaction_count: 2, fraud_count: 1, fraud_rate: 50, total_amount: 400, fraud_amount: 300}
+        - {category: travel, transaction_count: 1, fraud_count: 0, fraud_rate: 0, total_amount: 50, fraud_amount: 0}
+
+  - name: customer_risk_has_three_segments
+    description: Проверяем HIGH, MEDIUM и LOW, включая границу HIGH ровно 5 процентов.
+    model: mart_customer_risk_profile
+    given:
+      - input: ref('stg_transactions')
+        rows:
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 1}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: high, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 1}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: medium, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+          - {customer_id: low, transaction_time: '2024-01-01 12:00:00', amount: 10, is_fraud: 0}
+    expect:
+      rows:
+        - {customer_id: high, transaction_count: 20, fraud_count: 1, risk_level: HIGH}
+        - {customer_id: medium, transaction_count: 25, fraud_count: 1, risk_level: MEDIUM}
+        - {customer_id: low, transaction_count: 1, fraud_count: 0, risk_level: LOW}
